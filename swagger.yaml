@@ -1,0 +1,611 @@
+openapi: 3.0.0
+info:
+  description: Helio Compute Instaces allows users to create instances running a container
+  version: "1.0.0"
+  title: Helio Compute Instances API
+  contact:
+    email: team@helio.exchange
+servers:
+  - url: http://compute.helio.exchange/api
+tags:
+- name: "offerings"
+  description: "Instance Offerings"
+- name: "instances"
+  description: "Administer Instances"
+- name: "billing"
+  description: "Billing Information"
+security:
+  - bearerAuth: []
+paths:
+  /offerings:
+    get:
+      tags:
+        - offerings
+      summary: Retrieve Instance Offerings
+      operationId: getOfferings
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 1000
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: instance offerings matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Offerings'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /instances:
+    get:
+      tags:
+        - instances
+      summary: Retrieve all Instances
+      operationId: getInstances
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: 
+              - initializing
+              - running
+              - stopping
+              - stopped
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 1000
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: instances matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instances'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags:
+        - instances
+      summary: Create an Instance
+      operationId: createInstance
+      requestBody:
+        description: Instance to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewInstance'
+      responses:
+        '200':
+          description: instances matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instance'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          description: forbidden to create instance (quota reached)
+  /instances/{instanceId}:
+    get:
+      tags:
+        - instances
+      summary: Retrieve Instance information
+      operationId: getInstance
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      responses:
+        '200':
+          description: instance details
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Instance'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden to access resource
+  /instances/{instanceId}/events:
+    get:
+      tags:
+        - instances
+      summary: Retrieve all Events for an Instance
+      operationId: getInstanceEvents
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 1000
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: instance information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceEvents'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden to access resource
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /instances/{instanceId}/stop:
+    post:
+      tags:
+        - instances
+      summary: Stop an Instance
+      operationId: stopInstance
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      responses:
+        '200':
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Instance'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden to access resource
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+  /billing/periods:
+    get: 
+      tags:
+        - billing
+      summary: Retrieve billing periods
+      operationId: getBillingPeriods
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: 
+              - open
+              - paid
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 1000
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingPeriods'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden to access resource
+  /billing/periods/{billingPeriod}:
+    get:
+      tags:
+        - billing
+      summary: Retrieve informations for one Billing Period
+      operationId: getBillingPeriod
+      parameters:
+        - name: billingPeriod
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      responses:
+        '200':
+          description: search results matching criteria
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BillingPeriod'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Forbidden to access resource
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+components:
+  schemas:
+    Offerings:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            hits:
+              type: integer
+              format: int32
+              example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Offer'
+        links:
+          type: object
+          properties:
+            prev:
+              type: string
+              format: uri
+              example: null
+            next: 
+              type: string
+              format: uri
+              example: null
+            self: 
+              type: string
+              format: uri
+              example: null
+    Offer:
+      type: object
+      required:
+        - id
+        - cpus
+        - gpus
+        - price
+        - security
+        - location
+        - validUntil
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        cpus:
+          type: integer
+          format: int32
+          example: 64
+        gpu:
+          type: integer
+          format: int32
+          example: 1
+        memory:
+          type: integer
+          format: int32
+          example: 32
+        security:
+          type: string
+          enum:
+           - normal
+           - high
+        location:
+          type: string
+          example: "europe/switzerland/zurich"
+        price:
+          $ref: '#/components/schemas/PriceUnit'
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+    PriceUnit:
+      type: object
+      properties: 
+        unit:
+          type: string
+          enum:
+            - minute
+            - hour
+          example: hour
+        currency:
+          type: string
+          enum:
+            - USD
+        value:
+          type: number
+          example: 0.17123
+    Instances:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            total:
+              type: integer
+              format: int32
+              example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Instance'
+        links:
+          type: object
+          properties:
+            prev:
+              type: string
+              format: uri
+              example: null
+            next: 
+              type: string
+              format: uri
+              example: null
+            self: 
+              type: string
+              format: uri
+              example: null
+    Instance:
+      type: object
+      required:
+        - id
+        - container
+        - status
+        - costs
+        - offer
+        - started
+        - stopped
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        status:
+          type: string
+          enum: 
+            - initializing
+            - running
+            - stopping
+            - stopped
+          example: "running"
+        container:
+          $ref: '#/components/schemas/Container'
+        offer:
+          $ref: '#/components/schemas/Offer'
+        costs:
+          type: number
+          example: 0.17123
+        recentEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstanceEvent'
+    NewInstance:
+      type: object
+      required:
+        - container
+        - priceId
+      properties:
+        container:
+          $ref: '#/components/schemas/Container'
+        priceId:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+    InstanceEvents:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            hits:
+              type: integer
+              format: int32
+              example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstanceEvent'
+        links:
+          type: object
+          properties:
+            prev:
+              type: string
+              format: uri
+              example: null
+            next: 
+              type: string
+              format: uri
+              example: null
+            self: 
+              type: string
+              format: uri
+              example: null
+    InstanceEvent:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+          example: '2016-08-29T09:12:33.001Z'
+        event:
+          type: string
+          enum:
+            - created
+            - initialized
+            - started
+            - stopped
+    Container:
+      type: object
+      required:
+        - image
+        - env
+      properties:
+        image:
+          type: string
+          example: "busybox"
+        env:
+          type: object
+          additionalProperties:
+            type: string
+    BillingPeriods:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            hits:
+              type: integer
+              format: int32
+              example: 1
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillingPeriod'
+        links:
+          type: object
+          properties:
+            prev:
+              type: string
+              format: uri
+              example: null
+            next: 
+              type: string
+              format: uri
+              example: null
+            self: 
+              type: string
+              format: uri
+              example: null
+    BillingPeriod:
+      type: object
+      required:
+        - id
+        - status
+        - total
+        - from
+        - to
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        status:
+          type: string
+          enum:
+           - open
+           - paid
+          example: "paid"
+        total:
+          type: number
+          example: 0.51369
+        currency:
+          type: string
+          enum:
+            - USD
+        from:
+          type: string
+          format: date-time
+          example: '2016-08-01T00:00:00.000Z'
+        to:
+          type: string
+          format: date-time
+          example: '2016-08-31T23:59:59.001Z'
+        statements:
+          type: array
+          items:
+            type: object
+            properties:
+              instanceId:
+                type: string
+                format: uuid
+                example: d290f1ee-6c54-4b01-90e6-d701748f0851
+              started:
+                type: string
+                format: date-time
+                example: '2016-08-29T09:12:33.001Z'
+              stopped:
+                type: string
+                format: date-time
+                example: '2016-08-29T12:12:33.001Z'
+              pricePerUnit:
+                type: number
+                example: 0.17123
+              quantity:
+                type: number
+                example: 3
+              currency:
+                type: string
+                enum:
+                  - USD
+              subTotal:
+                type: number
+                example: 0.51369
+                
+  responses:
+    UnauthorizedError:
+      description: Access token is missing or invalid
+    NotFoundError:
+      description: Resource not found
+    ErrorResponse:
+      description: Errors in the request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: array
+                items:
+                  properties:
+                    code:
+                      type: string
+                    message:
+                      type: string
+
+  securitySchemes:
+    bearerAuth:            
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
